@@ -40,8 +40,10 @@ export class SSHProfileSettingsComponent implements ProfileSettingsComponent<SSH
 
         for (const k of Object.values(SSHAlgorithmType)) {
             this.algorithms[k] = {}
-            for (const alg of this.profile.options.algorithms[k]) {
-                this.algorithms[k][alg] = true
+            if (this.profile.options.algorithms?.[k]) {
+                for (const alg of this.profile.options.algorithms[k]) {
+                    this.algorithms[k][alg] = true
+                }
             }
         }
 
