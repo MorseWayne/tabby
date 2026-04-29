@@ -16,15 +16,37 @@ const iconsClassList = Object.keys(iconsData).map(
     templateUrl: './editProfileModal.component.pug',
 })
 export class EditProfileModalComponent<P extends Profile, PP extends ProfileProvider<P>> {
-    @Input('profile') _profile: P
+    private _profile: P
+    private profileProxy: FullyDefined<P> & ConfigProxy<FullyDefined<P>>
+
+    @Input('profile')
+    set profile (value: P | (FullyDefined<P> & ConfigProxy<FullyDefined<P>>)) {
+        this._profile = value as P
+        this.refreshProfileProxy()
+    }
+
+    get profile (): FullyDefined<P> & ConfigProxy<FullyDefined<P>> {
+        return this.profileProxy
+    }
+
     @Input() profileProvider: PP
     @Input() settingsComponent: new () => ProfileSettingsComponent<P, PP>
-    @Input() defaultsMode: 'enabled'|'group'|'disabled' = 'disabled'
+    private _defaultsMode: 'enabled'|'group'|'disabled' = 'disabled'
+
+    @Input()
+    set defaultsMode (value: 'enabled'|'group'|'disabled') {
+        this._defaultsMode = value
+        this.refreshProfileProxy()
+    }
+
+    get defaultsMode (): 'enabled'|'group'|'disabled' {
+        return this._defaultsMode
+    }
+
     @Input() profileGroup: PartialProfileGroup<ProfileGroup> | undefined
     groups: PartialProfileGroup<ProfileGroup>[]
     @ViewChild('placeholder', { read: ViewContainerRef }) placeholder: ViewContainerRef
 
-    protected profile: FullyDefined<P> & ConfigProxy<FullyDefined<P>>
     private settingsComponentInstance?: ProfileSettingsComponent<P, PP>
 
     constructor (
@@ -36,7 +58,7 @@ export class EditProfileModalComponent<P extends Profile, PP extends ProfileProv
         if (this.defaultsMode === 'disabled') {
             this.profilesService.getProfileGroups().then(groups => {
                 this.groups = groups
-                this.profileGroup = groups.find(g => g.id === this.profile.group)
+                this.profileGroup = groups.find(g => g.id === this.profileProxy?.group)
             })
         }
     }
@@ -55,8 +77,11 @@ export class EditProfileModalComponent<P extends Profile, PP extends ProfileProv
         return TAB_COLORS.find(x => x.value === value)?.name ?? value
     }
 
-    ngOnInit () {
-        this.profile = this.profilesService.getConfigProxyForProfile<P>(this._profile, { skipGlobalDefaults: this.defaultsMode === 'enabled', skipGroupDefaults: this.defaultsMode === 'group' })
+    private refreshProfileProxy () {
+        if (!this._profile) {
+            return
+        }
+        this.profileProxy = this.profilesService.getConfigProxyForProfile<P>(this._profile, { skipGlobalDefaults: this.defaultsMode === 'enabled', skipGroupDefaults: this.defaultsMode === 'group' })
     }
 
     ngAfterViewInit () {

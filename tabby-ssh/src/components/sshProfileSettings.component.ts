@@ -16,7 +16,7 @@ import { SSHProfilesService } from '../profiles'
 })
 export class SSHProfileSettingsComponent implements ProfileSettingsComponent<SSHProfile, SSHProfilesService> {
     Platform = Platform
-    profile: ProxifiedConfig<FullyDefined<SSHProfile>>
+    private _profile: ProxifiedConfig<FullyDefined<SSHProfile>>
     hasSavedPassword: boolean
 
     connectionMode: 'direct'|'proxyCommand'|'jumpHost'|'socksProxy'|'httpProxy' = 'direct'
@@ -34,8 +34,19 @@ export class SSHProfileSettingsComponent implements ProfileSettingsComponent<SSH
         private fileProviders: FileProvidersService,
     ) { }
 
-    async ngOnInit () {
-        this.jumpHosts = (await this.profilesService.getProfiles({ includeBuiltin: false })).filter(x => x.type === 'ssh' && x !== this.profile)
+    get profile (): ProxifiedConfig<FullyDefined<SSHProfile>> {
+        return this._profile
+    }
+
+    set profile (value: ProxifiedConfig<FullyDefined<SSHProfile>>) {
+        this._profile = value
+        if (value) {
+            this.initializeProfile()
+        }
+    }
+
+    private async initializeProfile () {
+        this.jumpHosts = (await this.profilesService.getProfiles({ includeBuiltin: false })).filter(x => x.type === 'ssh' && x !== this._profile)
         this.jumpHosts.sort(firstBy(x => this.getJumpHostLabel(x)))
 
         const algorithms = normalizeAlgorithms(this.profile.options.algorithms)
