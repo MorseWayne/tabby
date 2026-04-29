@@ -432,6 +432,15 @@ jobs:
         SM_LOG_LEVEL: TRACE
         # DEBUG: electron-builder,electron-builder:*
 
+    - name: Build packages without signing
+      if: "! (github.event_name == 'push' && startsWith(github.ref, 'refs/tags'))"
+      shell: powershell
+      run: |
+        node scripts/build-windows.mjs
+      env:
+        ARCH: ${{matrix.arch}}
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
     - name: Upload symbols
       run: |
         npm install -g @sentry/cli
