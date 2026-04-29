@@ -111,7 +111,6 @@ export class SSHProfileSettingsComponent implements ProfileSettingsComponent<SSH
     }
 
     save () {
-        this.profile.options.algorithms = normalizeAlgorithms(this.profile.options.algorithms)
         for (const k of Object.values(SSHAlgorithmType)) {
             this.profile.options.algorithms[k] = Object.entries(this.algorithms[k])
                 .filter(([_, v]) => !!v)
