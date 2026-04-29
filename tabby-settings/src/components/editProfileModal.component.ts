@@ -58,7 +58,7 @@ export class EditProfileModalComponent<P extends Profile, PP extends ProfileProv
         if (this.defaultsMode === 'disabled') {
             this.profilesService.getProfileGroups().then(groups => {
                 this.groups = groups
-                this.profileGroup = groups.find(g => g.id === this.profileProxy?.group)
+                this.profileGroup = groups.find(g => g.id === this.profileProxy.group)
             })
         }
     }
@@ -78,9 +78,6 @@ export class EditProfileModalComponent<P extends Profile, PP extends ProfileProv
     }
 
     private refreshProfileProxy () {
-        if (!this._profile) {
-            return
-        }
         this.profileProxy = this.profilesService.getConfigProxyForProfile<P>(this._profile, { skipGlobalDefaults: this.defaultsMode === 'enabled', skipGroupDefaults: this.defaultsMode === 'group' })
     }
 

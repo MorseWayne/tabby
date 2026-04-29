@@ -40,9 +40,7 @@ export class SSHProfileSettingsComponent implements ProfileSettingsComponent<SSH
 
     set profile (value: ProxifiedConfig<FullyDefined<SSHProfile>>) {
         this._profile = value
-        if (value) {
-            this.initializeProfile()
-        }
+        this.initializeProfile()
     }
 
     private async initializeProfile () {
