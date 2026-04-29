@@ -15,7 +15,7 @@ import { SFTPSession } from './sftp'
 import { SSHAlgorithmType, SSHProfile, AutoPrivateKeyLocator, PortForwardType } from '../api'
 import { ForwardedPort } from './forwards'
 import { X11Socket } from './x11'
-import { supportedAlgorithms } from '../algorithms'
+import { normalizeAlgorithms, supportedAlgorithms } from '../algorithms'
 import * as russh from 'russh'
 
 const WINDOWS_OPENSSH_AGENT_PIPE = '\\\\.\\pipe\\openssh-ssh-agent'
@@ -350,9 +350,9 @@ export class SSHSession {
     async start (): Promise<void> {
         await this.init()
 
-        const algorithms = {}
+        const algorithms = normalizeAlgorithms(this.profile.options.algorithms)
         for (const key of Object.values(SSHAlgorithmType)) {
-            algorithms[key] = this.profile.options.algorithms[key].filter(x => supportedAlgorithms[key].includes(x))
+            algorithms[key] = algorithms[key].filter(x => supportedAlgorithms[key].includes(x))
         }
 
         // eslint-disable-next-line @typescript-eslint/init-declarations
@@ -396,11 +396,11 @@ export class SSHSession {
             },
             {
                 preferred: {
-                    ciphers: this.profile.options.algorithms[SSHAlgorithmType.CIPHER].filter(x => supportedAlgorithms[SSHAlgorithmType.CIPHER].includes(x)),
-                    kex: this.profile.options.algorithms[SSHAlgorithmType.KEX].filter(x => supportedAlgorithms[SSHAlgorithmType.KEX].includes(x)),
-                    mac: this.profile.options.algorithms[SSHAlgorithmType.HMAC].filter(x => supportedAlgorithms[SSHAlgorithmType.HMAC].includes(x)),
-                    key: this.profile.options.algorithms[SSHAlgorithmType.HOSTKEY].filter(x => supportedAlgorithms[SSHAlgorithmType.HOSTKEY].includes(x)),
-                    compression: this.profile.options.algorithms[SSHAlgorithmType.COMPRESSION].filter(x => supportedAlgorithms[SSHAlgorithmType.COMPRESSION].includes(x)),
+                    ciphers: algorithms[SSHAlgorithmType.CIPHER],
+                    kex: algorithms[SSHAlgorithmType.KEX],
+                    mac: algorithms[SSHAlgorithmType.HMAC],
+                    key: algorithms[SSHAlgorithmType.HOSTKEY],
+                    compression: algorithms[SSHAlgorithmType.COMPRESSION],
                 },
                 keepaliveIntervalSeconds: Math.round(this.profile.options.keepaliveInterval / 1000),
                 keepaliveCountMax: this.profile.options.keepaliveCountMax,

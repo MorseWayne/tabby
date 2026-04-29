@@ -3,9 +3,9 @@ import { NewTabParameters, PartialProfile, TranslateService, QuickConnectProfile
 import { SSHProfileSettingsComponent } from './components/sshProfileSettings.component'
 import { SSHTabComponent } from './components/sshTab.component'
 import { PasswordStorageService } from './services/passwordStorage.service'
-import { SSHAlgorithmType, SSHProfile } from './api'
+import { SSHProfile } from './api'
 import { SSHProfileImporter } from './api/importer'
-import { defaultAlgorithms } from './algorithms'
+import { getDefaultAlgorithms } from './algorithms'
 
 @Injectable({ providedIn: 'root' })
 export class SSHProfilesService extends QuickConnectProfileProvider<SSHProfile> {
@@ -28,13 +28,7 @@ export class SSHProfilesService extends QuickConnectProfileProvider<SSHProfile> 
             jumpHost: null,
             agentForward: false,
             warnOnClose: null,
-            algorithms: {
-                hmac: [] as string[],
-                kex: [] as string[],
-                cipher: [] as string[],
-                serverHostKey: [] as string[],
-                compression: [] as string[],
-            },
+            algorithms: getDefaultAlgorithms(),
             proxyCommand: null,
             forwardedPorts: [],
             scripts: [],
@@ -52,13 +46,7 @@ export class SSHProfilesService extends QuickConnectProfileProvider<SSHProfile> 
         private passwordStorage: PasswordStorageService,
         private translate: TranslateService,
         private injector: Injector,
-    ) {
-        super()
-        for (const k of Object.values(SSHAlgorithmType)) {
-            this.configDefaults.options.algorithms[k] = [...defaultAlgorithms[k]]
-            if (k !== SSHAlgorithmType.COMPRESSION) { this.configDefaults.options.algorithms[k].sort() }
-        }
-    }
+    ) { super() }
 
     async getBuiltinProfiles (): Promise<PartialProfile<SSHProfile>[]> {
         const importers = this.injector.get<SSHProfileImporter[]>(SSHProfileImporter as any, [], InjectFlags.Optional)

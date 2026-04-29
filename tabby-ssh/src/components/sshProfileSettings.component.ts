@@ -7,7 +7,7 @@ import { FileProvidersService, Platform, HostAppService, PromptModalComponent, P
 import { LoginScriptsSettingsComponent } from 'tabby-terminal'
 import { PasswordStorageService } from '../services/passwordStorage.service'
 import { ForwardedPortConfig, SSHAlgorithmType, SSHProfile } from '../api'
-import { supportedAlgorithms } from '../algorithms'
+import { normalizeAlgorithms, supportedAlgorithms } from '../algorithms'
 import { SSHProfilesService } from '../profiles'
 
 /** @hidden */
@@ -38,12 +38,11 @@ export class SSHProfileSettingsComponent implements ProfileSettingsComponent<SSH
         this.jumpHosts = (await this.profilesService.getProfiles({ includeBuiltin: false })).filter(x => x.type === 'ssh' && x !== this.profile)
         this.jumpHosts.sort(firstBy(x => this.getJumpHostLabel(x)))
 
+        const algorithms = normalizeAlgorithms(this.profile.options.algorithms)
         for (const k of Object.values(SSHAlgorithmType)) {
             this.algorithms[k] = {}
-            if (this.profile.options.algorithms?.[k]) {
-                for (const alg of this.profile.options.algorithms[k]) {
-                    this.algorithms[k][alg] = true
-                }
+            for (const alg of algorithms[k]) {
+                this.algorithms[k][alg] = true
             }
         }
 
@@ -103,6 +102,7 @@ export class SSHProfileSettingsComponent implements ProfileSettingsComponent<SSH
     }
 
     save () {
+        this.profile.options.algorithms = normalizeAlgorithms(this.profile.options.algorithms)
         for (const k of Object.values(SSHAlgorithmType)) {
             this.profile.options.algorithms[k] = Object.entries(this.algorithms[k])
                 .filter(([_, v]) => !!v)

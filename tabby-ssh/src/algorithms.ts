@@ -48,3 +48,25 @@ export const defaultAlgorithms = {
         'none',
     ],
 }
+
+export function getDefaultAlgorithms (): Record<SSHAlgorithmType, string[]> {
+    const algorithms = {} as Record<SSHAlgorithmType, string[]>
+    for (const k of Object.values(SSHAlgorithmType)) {
+        algorithms[k] = [...defaultAlgorithms[k]]
+        if (k !== SSHAlgorithmType.COMPRESSION) { algorithms[k].sort() }
+    }
+    return algorithms
+}
+
+export function normalizeAlgorithms (
+    algorithms?: Partial<Record<SSHAlgorithmType, string[] | null>> | null,
+): Record<SSHAlgorithmType, string[]> {
+    const normalized = getDefaultAlgorithms()
+    for (const k of Object.values(SSHAlgorithmType)) {
+        const configuredAlgorithms = algorithms?.[k]
+        if (configuredAlgorithms) {
+            normalized[k] = [...configuredAlgorithms]
+        }
+    }
+    return normalized
+}
