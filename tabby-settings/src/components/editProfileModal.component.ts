@@ -28,6 +28,7 @@ export class EditProfileModalComponent<P extends Profile, PP extends ProfileProv
     get profile (): FullyDefined<P> & ConfigProxy<FullyDefined<P>> {
         return this.profileProxy
     }
+
     @Input() profileProvider: PP
     @Input() settingsComponent: new () => ProfileSettingsComponent<P, PP>
     private _defaultsMode: 'enabled'|'group'|'disabled' = 'disabled'
