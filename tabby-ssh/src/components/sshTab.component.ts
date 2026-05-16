@@ -198,7 +198,8 @@ export class SSHTabComponent extends ConnectableTerminalTabComponent<SSHProfile>
         if (!this.session?.open) {
             return true
         }
-        const warnOnClose = this.profile.options.warnOnClose ?? this.config.store.ssh.warnOnClose
+        const profileWarnOnClose = this.profile.options.warnOnClose as boolean | null
+        const warnOnClose = profileWarnOnClose === null ? this.config.store.ssh.warnOnClose : profileWarnOnClose
         if (!warnOnClose) {
             return true
         }
