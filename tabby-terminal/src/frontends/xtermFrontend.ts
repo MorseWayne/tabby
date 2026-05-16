@@ -1,11 +1,10 @@
 import deepEqual from 'deep-equal'
 import { BehaviorSubject, filter, firstValueFrom, takeUntil } from 'rxjs'
 import { Injector } from '@angular/core'
-import { ConfigService, getCSSFontFamily, getWindows10Build, HostAppService, HotkeysService, NotificationsService, Platform, PlatformService, ThemesService, TranslateService } from 'tabby-core'
+import { ConfigService, getCSSFontFamily, getWindows10Build, HostAppService, HotkeysService, Platform, PlatformService, TerminalColorScheme, ThemesService } from 'tabby-core'
 import { Frontend, SearchOptions, SearchState } from './frontend'
 import { Terminal, ITheme } from '@xterm/xterm'
 import { FitAddon } from '@xterm/addon-fit'
-import { ClipboardAddon } from '@xterm/addon-clipboard'
 import { LigaturesAddon } from '@xterm/addon-ligatures'
 import { ISearchOptions, SearchAddon } from '@xterm/addon-search'
 import { WebglAddon } from '@xterm/addon-webgl'
@@ -13,8 +12,9 @@ import { Unicode11Addon } from '@xterm/addon-unicode11'
 import { SerializeAddon } from '@xterm/addon-serialize'
 import { ImageAddon } from '@xterm/addon-image'
 import { CanvasAddon } from '@xterm/addon-canvas'
-import { BaseTerminalProfile, TerminalColorScheme } from '../api/interfaces'
-import { getTerminalBackgroundColor } from '../helpers'
+import { BaseTerminalProfile } from '../api/interfaces'
+import { getXtermBackgroundColor } from '../helpers'
+import { generatePalette } from '../generatePalette'
 import './xterm.css'
 
 const COLOR_NAMES = [
@@ -89,8 +89,6 @@ export class XTermFrontend extends Frontend {
     private platformService: PlatformService
     private hostApp: HostAppService
     private themes: ThemesService
-    private notifications: NotificationsService
-    private translate: TranslateService
 
     constructor (injector: Injector) {
         super(injector)
@@ -99,18 +97,11 @@ export class XTermFrontend extends Frontend {
         this.platformService = injector.get(PlatformService)
         this.hostApp = injector.get(HostAppService)
         this.themes = injector.get(ThemesService)
-        this.notifications = injector.get(NotificationsService)
-        this.translate = injector.get(TranslateService)
 
         this.xterm = new Terminal({
             allowTransparency: true,
             allowProposedApi: true,
-            overviewRuler: {
-                width: 8,
-                showBottomBorder: false,
-                showTopBorder: false,
-            },
-            reflowCursorLine: true,
+            overviewRulerWidth: 8,
             windowsPty: process.platform === 'win32' ? {
                 backend: this.configService.store.terminal.useConPTY ? 'conpty' : 'winpty',
                 buildNumber: getWindows10Build(),
@@ -146,15 +137,6 @@ export class XTermFrontend extends Frontend {
         this.xterm.loadAddon(this.fitAddon)
         this.xterm.loadAddon(this.serializeAddon)
         this.xterm.loadAddon(new Unicode11Addon())
-        this.xterm.loadAddon(new ClipboardAddon(undefined, {
-            readText: async () => {
-                return this.platformService.readClipboard()
-            },
-            writeText: async (_, text) => {
-                this.platformService.setClipboard({ text })
-                this.notifications.notice(this.translate.instant('Copied'))
-            },
-        }))
         this.xterm.unicode.activeVersion = '11'
 
         if (this.configService.store.terminal.sixel) {
@@ -231,7 +213,7 @@ export class XTermFrontend extends Frontend {
                     const savedViewportY = this.xterm.buffer.active.viewportY
 
                     this.fitAddon.fit()
-                    this.xterm.refresh(0, this.xterm.rows - 1)
+                    this.xtermCore.viewport._refresh()
 
                     if (savedPinned) {
                         this.xtermCore._scrollToBottom()
@@ -260,7 +242,6 @@ export class XTermFrontend extends Frontend {
             const altBufferActive = this.xterm.buffer.active.type === 'alternate'
             this.alternateScreenActive.next(altBufferActive)
         })
-
     }
 
     private isAtBottom (): boolean {
@@ -474,7 +455,7 @@ export class XTermFrontend extends Frontend {
     }
 
     private configureColors (scheme: TerminalColorScheme | null): void {
-        const appColorScheme = this.themes._getActiveColorScheme() as TerminalColorScheme
+        const appColorScheme = this.themes._getActiveColorScheme()
 
         scheme = scheme ?? appColorScheme
 
@@ -482,19 +463,23 @@ export class XTermFrontend extends Frontend {
             foreground: scheme.foreground,
             selectionBackground: scheme.selection ?? '#88888888',
             selectionForeground: scheme.selectionForeground ?? undefined,
-            background: getTerminalBackgroundColor(this.configService, this.themes, scheme) ?? '#00000000',
+            background: getXtermBackgroundColor(this.configService, this.themes, scheme),
             cursor: scheme.cursor,
             cursorAccent: scheme.cursorAccent,
-            overviewRulerBorder: scheme.background,
         }
 
         for (let i = 0; i < COLOR_NAMES.length; i++) {
             theme[COLOR_NAMES[i]] = scheme.colors[i]
         }
 
-        theme.scrollbarSliderBackground = theme.brightBlack
-        theme.scrollbarSliderHoverBackground = theme.brightBlack
-        theme.scrollbarSliderHoverBackground = theme.brightBlack
+        if (this.configService.store.terminal.paletteGenerate) {
+            theme.extendedAnsi = generatePalette(
+                scheme.colors,
+                scheme.background,
+                scheme.foreground,
+                this.configService.store.terminal.paletteHarmonious,
+            )
+        }
 
         if (!deepEqual(this.configuredTheme, theme)) {
             this.xterm.options.theme = theme
@@ -517,12 +502,9 @@ export class XTermFrontend extends Frontend {
             }
         })
 
-        this.xtermCore.browser = {
-            ...this.xtermCore.browser,
-            isWindows: this.hostApp.platform === Platform.Windows,
-            isLinux: this.hostApp.platform === Platform.Linux,
-            isMac: this.hostApp.platform === Platform.macOS,
-        }
+        this.xtermCore.browser.isWindows = this.hostApp.platform === Platform.Windows
+        this.xtermCore.browser.isLinux = this.hostApp.platform === Platform.Linux
+        this.xtermCore.browser.isMac = this.hostApp.platform === Platform.macOS
 
         this.xterm.options.fontFamily = getCSSFontFamily(config)
         this.xterm.options.cursorStyle = {
