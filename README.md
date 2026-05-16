@@ -111,6 +111,20 @@ This README is also available in: <a  href="./README.es-ES.md">:es: Spanish</a> 
 
 Tabby will run as a portable app on Windows, if you create a `data` folder in the same location where `Tabby.exe` lives.
 
+To build a Windows x64 portable ZIP locally, run:
+
+```powershell
+.\scripts\build-windows-portable.ps1 -Arch x64
+```
+
+If dependencies, the application build, and plugin prepackaging have already been completed, rebuild only the portable ZIP with:
+
+```powershell
+.\scripts\build-windows-portable.ps1 -Arch x64 -SkipInstall -SkipBuild -SkipPrepackage
+```
+
+The resulting archive is written to `dist\tabby-*-portable-x64.zip`.
+
 <a name="plugins"></a>
 
 # Plugins
