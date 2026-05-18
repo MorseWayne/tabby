@@ -108,4 +108,20 @@ title-bar(
             [tab]='tab',
         )
 
+        .root-split-drop-zones([class.active]='canRootSplitDraggedTab()')
+            .root-split-drop-zone(
+                *ngFor='let zone of rootSplitDropZones',
+                cdkDropList,
+                cdkAutoDropGroup='app-tabs',
+                [class.left]='zone.side == "l"',
+                [class.top]='zone.side == "t"',
+                [class.right]='zone.side == "r"',
+                [class.bottom]='zone.side == "b"',
+                [class.highlighted]='highlightedRootSplitSide == zone.side',
+                (cdkDropListDropped)='onRootSplitDrop($event.item.data, zone.side)',
+                (cdkDropListEntered)='highlightedRootSplitSide = zone.side',
+                (cdkDropListExited)='highlightedRootSplitSide = null',
+            )
+                .root-split-drop-zone-inner
+
 ng-template(ngbModalContainer)

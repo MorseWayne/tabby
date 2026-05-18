@@ -764,10 +764,18 @@ export class SplitTabComponent extends BaseTabComponent implements AfterViewInit
         }
 
         if (zone.type === 'relative') {
-            this.add(tab, zone.relativeTo ?? null, zone.side)
+            this.adoptTab(tab, zone.relativeTo ?? null, zone.side)
         } else {
-            this.add(tab, zone.container.children[zone.position], zone.container.orientation === 'h' ? 'r' : 'b')
+            this.adoptTab(tab, zone.container.children[zone.position], zone.container.orientation === 'h' ? 'r' : 'b')
         }
+    }
+
+    async adoptTab (tab: BaseTabComponent, relative: BaseTabComponent|SplitContainer|null, side: SplitDirection): Promise<void> {
+        if (tab === this) {
+            return
+        }
+
+        await this.add(tab, relative, side)
         this.tabAdopted.next(tab)
     }
 
@@ -893,35 +901,38 @@ export class SplitTabComponent extends BaseTabComponent implements AfterViewInit
         const thickness = 10
 
         if (root === this.root) {
+            const edgeRatio = 0.32
+            const horizontalInset = w * edgeRatio
+            const verticalInset = h * edgeRatio
             this._dropZones.push({
-                x: x - thickness / 2,
-                y: y + thickness,
-                w: thickness,
-                h: h - thickness * 2,
+                x,
+                y,
+                w: horizontalInset,
+                h,
                 type: 'relative',
                 side: 'l',
             })
             this._dropZones.push({
-                x,
-                y: y - thickness / 2,
-                w,
-                h: thickness,
+                x: x + horizontalInset,
+                y,
+                w: w - horizontalInset * 2,
+                h: verticalInset,
                 type: 'relative',
                 side: 't',
             })
             this._dropZones.push({
-                x: x + w - thickness / 2,
-                y: y + thickness,
-                w: thickness,
-                h: h - thickness * 2,
+                x: x + w - horizontalInset,
+                y,
+                w: horizontalInset,
+                h,
                 type: 'relative',
                 side: 'r',
             })
             this._dropZones.push({
-                x,
-                y: y + h - thickness / 2,
-                w,
-                h: thickness,
+                x: x + horizontalInset,
+                y: y + h - verticalInset,
+                w: w - horizontalInset * 2,
+                h: verticalInset,
                 type: 'relative',
                 side: 'b',
             })
@@ -977,46 +988,45 @@ export class SplitTabComponent extends BaseTabComponent implements AfterViewInit
                 })
             }
 
-            // Sides
-            if (root.orientation === 'v') {
-                this._dropZones.push({
-                    x: childX,
-                    y: childY + thickness,
-                    w: thickness,
-                    h: childH - thickness * 2,
-                    type: 'relative',
-                    relativeTo: child,
-                    side: 'l',
-                })
-                this._dropZones.push({
-                    x: childX + w - thickness,
-                    y: childY + thickness,
-                    w: thickness,
-                    h: childH - thickness * 2,
-                    type: 'relative',
-                    relativeTo: child,
-                    side: 'r',
-                })
-            } else {
-                this._dropZones.push({
-                    x: childX + thickness,
-                    y: childY,
-                    w: childW - thickness * 2,
-                    h: thickness,
-                    type: 'relative',
-                    relativeTo: child,
-                    side: 't',
-                })
-                this._dropZones.push({
-                    x: childX + thickness,
-                    y: childY + childH - thickness,
-                    w: childW - thickness * 2,
-                    h: thickness,
-                    type: 'relative',
-                    relativeTo: child,
-                    side: 'b',
-                })
-            }
+            const paneHorizontalInset = childW * 0.24
+            const paneVerticalInset = childH * 0.24
+
+            this._dropZones.push({
+                x: childX,
+                y: childY + paneVerticalInset,
+                w: paneHorizontalInset,
+                h: childH - paneVerticalInset * 2,
+                type: 'relative',
+                relativeTo: child,
+                side: 'l',
+            })
+            this._dropZones.push({
+                x: childX + paneHorizontalInset,
+                y: childY,
+                w: childW - paneHorizontalInset * 2,
+                h: paneVerticalInset,
+                type: 'relative',
+                relativeTo: child,
+                side: 't',
+            })
+            this._dropZones.push({
+                x: childX + childW - paneHorizontalInset,
+                y: childY + paneVerticalInset,
+                w: paneHorizontalInset,
+                h: childH - paneVerticalInset * 2,
+                type: 'relative',
+                relativeTo: child,
+                side: 'r',
+            })
+            this._dropZones.push({
+                x: childX + paneHorizontalInset,
+                y: childY + childH - paneVerticalInset,
+                w: childW - paneHorizontalInset * 2,
+                h: paneVerticalInset,
+                type: 'relative',
+                relativeTo: child,
+                side: 'b',
+            })
 
             if (i !== 0) {
                 this._spanners.push({

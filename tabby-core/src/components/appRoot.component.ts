@@ -15,7 +15,7 @@ import { CommandService } from '../services/commands.service'
 import { BaseTabComponent } from './baseTab.component'
 import { SafeModeModalComponent } from './safeModeModal.component'
 import { TabBodyComponent } from './tabBody.component'
-import { SplitTabComponent } from './splitTab.component'
+import { SplitDirection, SplitTabComponent } from './splitTab.component'
 import { AppService, Command, CommandLocation, FileTransfer, HostWindowService, PlatformService } from '../api'
 
 function makeTabAnimation (dimension: string, size: number) {
@@ -75,6 +75,15 @@ export class AppRootComponent {
     unsortedTabs: BaseTabComponent[] = []
     updatesAvailable = false
     activeTransfers: FileTransfer[] = []
+    draggedTab: BaseTabComponent|null = null
+    highlightedRootSplitSide: SplitDirection|null = null
+    rootSplitDropZones: { side: SplitDirection }[] = [
+        { side: 'l' },
+        { side: 't' },
+        { side: 'r' },
+        { side: 'b' },
+    ]
+
     private logger: Logger
 
     constructor (
@@ -167,6 +176,11 @@ export class AppRootComponent {
             this.app.emitTabDragEnded()
         })
 
+        this.app.tabDragActive$.subscribe(tab => {
+            this.draggedTab = tab
+            this.highlightedRootSplitSide = null
+        })
+
         platform.fileTransferStarted$.subscribe(transfer => {
             this.activeTransfers.push(transfer)
             this.activeTransfersDropdown.open()
@@ -223,6 +237,28 @@ export class AppRootComponent {
             }
         }
         moveItemInArray(this.app.tabs, event.previousIndex, event.currentIndex)
+        this.app.emitTabsChanged()
+    }
+
+    canRootSplitDraggedTab (): boolean {
+        const target = this.app.activeTab
+        if (!this.draggedTab || !target || this.draggedTab === target) {
+            return false
+        }
+        return (
+            this.app.tabs.includes(this.draggedTab) &&
+            target instanceof SplitTabComponent &&
+            target.getAllTabs().length === 1
+        )
+    }
+
+    async onRootSplitDrop (tab: BaseTabComponent, side: SplitDirection): Promise<void> {
+        this.highlightedRootSplitSide = null
+        const target = this.app.activeTab
+        if (!(target instanceof SplitTabComponent) || tab !== this.draggedTab || !this.canRootSplitDraggedTab()) {
+            return
+        }
+        await target.adoptTab(tab, null, side)
         this.app.emitTabsChanged()
     }
 
