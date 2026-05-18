@@ -226,7 +226,7 @@ jobs:
     - name: Prepackage plugins (${{matrix.arch}})
       run: scripts/prepackage-plugins.mjs
 
-    - name: Build packages (${{matrix.arch}})
+    - name: Build DEB package (${{matrix.arch}})
       run: scripts/build-linux.mjs
       env:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
@@ -257,38 +257,13 @@ jobs:
       with:
         repo: 'eugeny/tabby'
         dir: 'dist'
-        rpmvers: 'el/9 el/8 ol/6 ol/7'
         debvers: 'ubuntu/bionic ubuntu/focal ubuntu/hirsute ubuntu/impish ubuntu/jammy ubuntu/kinetic ubuntu/noble ubuntu/oracular debian/jessie debian/stretch debian/buster debian/bullseye debian/bookworm debian/trixie debian/forky debian/duke debian/forky debian/sid'
-
-    - uses: actions/upload-artifact@master
-      name: Upload AppImage (${{matrix.arch}})
-      with:
-        name: Linux AppImage (${{matrix.arch}})
-        path: dist/*.AppImage
 
     - uses: actions/upload-artifact@master
       name: Upload DEB (${{matrix.arch}})
       with:
         name: Linux DEB (${{matrix.arch}})
         path: dist/*.deb
-
-    - uses: actions/upload-artifact@master
-      name: Upload RPM (${{matrix.arch}})
-      with:
-        name: Linux RPM (${{matrix.arch}})
-        path: dist/*.rpm
-
-    - uses: actions/upload-artifact@master
-      name: Upload Pacman Package (${{matrix.arch}})
-      with:
-        name: Linux Pacman (${{matrix.arch}})
-        path: dist/*.pacman
-
-    - uses: actions/upload-artifact@master
-      name: Upload Linux tarball (${{matrix.arch}})
-      with:
-        name: Linux tarball (${{matrix.arch}})
-        path: dist/*.tar.gz
 
     - uses: actions/upload-artifact@master
       name: Upload web tarball (amd64 only)
