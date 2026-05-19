@@ -28,4 +28,15 @@ if [[ ! -f "$deb_path" ]]; then
     exit 1
 fi
 
-run_step "Install DEB package" sudo apt install "$deb_path"
+install_path="$(realpath "$deb_path")"
+tmp_deb="$(mktemp --tmpdir tabby-install-XXXXXX.deb)"
+cp "$install_path" "$tmp_deb"
+chmod 644 "$tmp_deb"
+trap 'rm -f "$tmp_deb"' EXIT
+
+package_name="$(dpkg-deb -f "$tmp_deb" Package)"
+if dpkg-query -W -f='${Status}' "$package_name" 2>/dev/null | grep -q '^install ok installed$'; then
+    run_step "Remove installed $package_name package" sudo apt remove -y "$package_name"
+fi
+
+run_step "Install DEB package" sudo apt install "$tmp_deb"
