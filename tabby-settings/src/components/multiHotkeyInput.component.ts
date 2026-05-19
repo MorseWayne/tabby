@@ -37,8 +37,8 @@ export class MultiHotkeyInputComponent {
         })
     }
 
-    removeItem (item: Hotkey): void {
-        this.hotkeys = this.hotkeys.filter(x => x !== item)
+    removeItem (index: number): void {
+        this.hotkeys = this.hotkeys.filter((_, i) => i !== index)
         this.storeUpdatedHotkeys()
     }
 

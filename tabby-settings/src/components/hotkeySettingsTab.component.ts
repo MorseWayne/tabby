@@ -40,7 +40,7 @@ export class HotkeySettingsTabComponent {
         return (ptr || []).map(hotkey => this.detectDuplicates(hotkey))
     }
 
-    setHotkeys (id: string, hotkeys: Hotkey[]) {
+    async setHotkeys (id: string, hotkeys: Hotkey[]) {
         let ptr = this.config.store
         let prop = 'hotkeys'
         for (const token of id.split(/\./g)) {
@@ -52,8 +52,12 @@ export class HotkeySettingsTabComponent {
                 ? hotkey.strokes[0]
                 : hotkey.strokes,
         )
-        this.config.save()
         this.allDuplicateHotkeys = this.getAllDuplicateHotkeys()
+        try {
+            await this.config.save()
+        } catch (error) {
+            console.error('Could not save hotkeys:', error)
+        }
     }
 
     hotkeyFilterFn (hotkey: HotkeyDescription, query: string): boolean {
