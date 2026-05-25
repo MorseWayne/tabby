@@ -26,4 +26,21 @@ profile-icon(
 
     button(*ngIf='!config.store.terminal.hideCloseButton',(click)='app.closeTab(tab, true)') &times;
 
+.split-drop-zones([class.active]='canDropTabIntoSplit()')
+    .split-drop-zone(
+        *ngFor='let zone of splitDropZones',
+        cdkDropList,
+        cdkAutoDropGroup='app-tabs',
+        [cdkDropListSortingDisabled]='true',
+        [class.left]='zone.side == "l"',
+        [class.top]='zone.side == "t"',
+        [class.right]='zone.side == "r"',
+        [class.bottom]='zone.side == "b"',
+        [class.highlighted]='highlightedSplitSide == zone.side',
+        (cdkDropListDropped)='onSplitDrop($event.item.data, zone.side)',
+        (cdkDropListEntered)='highlightedSplitSide = zone.side',
+        (cdkDropListExited)='highlightedSplitSide = null',
+    )
+        .split-drop-zone-inner
+
 ng-content

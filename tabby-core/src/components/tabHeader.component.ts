@@ -3,7 +3,7 @@ import { Component, Input, Optional, Inject, HostBinding, HostListener, NgZone }
 import { auditTime } from 'rxjs'
 import { TabContextMenuItemProvider } from '../api/tabContextMenuProvider'
 import { BaseTabComponent } from './baseTab.component'
-import { SplitTabComponent } from './splitTab.component'
+import { SplitDirection, SplitTabComponent } from './splitTab.component'
 import { HotkeysService } from '../services/hotkeys.service'
 import { AppService } from '../services/app.service'
 import { HostAppService, Platform } from '../api/hostApp'
@@ -24,6 +24,14 @@ export class TabHeaderComponent extends BaseComponent {
     @Input() tab: BaseTabComponent
     @Input() progress: number|null
     Platform = Platform
+    draggedTab: BaseTabComponent|null = null
+    highlightedSplitSide: SplitDirection|null = null
+    splitDropZones: { side: SplitDirection }[] = [
+        { side: 'l' },
+        { side: 't' },
+        { side: 'r' },
+        { side: 'b' },
+    ]
 
     constructor (
         public app: AppService,
@@ -43,6 +51,10 @@ export class TabHeaderComponent extends BaseComponent {
             }
         })
         this.contextMenuProviders.sort((a, b) => a.weight - b.weight)
+        this.subscribeUntilDestroyed(this.app.tabDragActive$, tab => {
+            this.draggedTab = tab
+            this.highlightedSplitSide = null
+        })
     }
 
     ngOnInit () {
@@ -76,6 +88,27 @@ export class TabHeaderComponent extends BaseComponent {
             }
         }
         return items.slice(1)
+    }
+
+    canDropTabIntoSplit (): boolean {
+        return !!(
+            this.draggedTab &&
+            this.draggedTab !== this.tab &&
+            this.app.tabs.includes(this.draggedTab) &&
+            this.app.tabs.includes(this.tab) &&
+            this.tab instanceof SplitTabComponent &&
+            this.tab.getAllTabs().length === 1
+        )
+    }
+
+    async onSplitDrop (tab: BaseTabComponent, side: SplitDirection): Promise<void> {
+        this.highlightedSplitSide = null
+        if (tab !== this.draggedTab || !this.canDropTabIntoSplit() || !(this.tab instanceof SplitTabComponent)) {
+            return
+        }
+        this.app.selectTab(this.tab)
+        await this.tab.adoptTab(tab, null, side)
+        this.app.emitTabsChanged()
     }
 
     onTabDragStart (tab: BaseTabComponent) {
