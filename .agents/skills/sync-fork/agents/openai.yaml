@@ -1,0 +1,4 @@
+interface:
+  display_name: "Sync Fork"
+  short_description: "Sync this fork from upstream safely"
+  default_prompt: "Use $sync-fork to sync this fork from the upstream Tabby repository."

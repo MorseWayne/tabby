@@ -37,6 +37,6 @@ sentry-symbols.js
 
 crowdin.yml
 .crowdin.env
-.gitnexus
+.codegraph/
 .claude/settings.local.json
 .claude/worktrees/
