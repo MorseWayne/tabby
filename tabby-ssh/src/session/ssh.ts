@@ -426,7 +426,7 @@ export class SSHSession {
                     key: algorithms[SSHAlgorithmType.HOSTKEY],
                     compression: algorithms[SSHAlgorithmType.COMPRESSION],
                 },
-                keepaliveIntervalSeconds: Math.round(this.profile.options.keepaliveInterval / 1000),
+                keepaliveIntervalSeconds: this.profile.options.keepaliveInterval ? Math.round(this.profile.options.keepaliveInterval / 1000) : undefined,
                 keepaliveCountMax: this.profile.options.keepaliveCountMax,
                 connectionTimeoutSeconds: this.profile.options.readyTimeout ? Math.round(this.profile.options.readyTimeout / 1000) : undefined,
             },

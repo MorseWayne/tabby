@@ -7,7 +7,7 @@ import {
     HotkeyDescription,
     HotkeysService,
     HostAppService,
-} from 'tabby-core'
+    PlatformService } from 'tabby-core'
 
 _('Search hotkeys')
 
@@ -15,6 +15,7 @@ _('Search hotkeys')
 @Component({
     selector: 'hotkey-settings-tab',
     templateUrl: './hotkeySettingsTab.component.pug',
+    styleUrls: ['./hotkeySettingsTab.component.scss'],
 })
 export class HotkeySettingsTabComponent {
     hotkeyFilter = ''
@@ -25,6 +26,7 @@ export class HotkeySettingsTabComponent {
         public config: ConfigService,
         public hostApp: HostAppService,
         public zone: NgZone,
+        private platform: PlatformService,
         hotkeys: HotkeysService,
     ) {
         hotkeys.getHotkeyDescriptions().then(descriptions => {
@@ -33,17 +35,23 @@ export class HotkeySettingsTabComponent {
     }
 
     getHotkeys (id: string): Hotkey[] {
-        let ptr = this.config.store.hotkeys
-        for (const token of id.split(/\./g)) {
-            ptr = ptr[token]
+        let ptr: any = this.config.store.hotkeys
+        for (const token of id.split('.')) {
+            ptr = ptr?.[token]
+            if (ptr == null) {
+                return []
+            }
         }
-        return (ptr || []).map(hotkey => this.detectDuplicates(hotkey))
+        return Array.isArray(ptr) ? ptr.map(hotkey => this.detectDuplicates(hotkey)) : []
     }
 
-    async setHotkeys (id: string, hotkeys: Hotkey[]) {
-        let ptr = this.config.store
+    setHotkeys (id: string, hotkeys: Hotkey[]) {
+        let ptr: any = this.config.store
         let prop = 'hotkeys'
         for (const token of id.split(/\./g)) {
+            if (ptr[prop] == null || typeof ptr[prop] !== 'object' || Array.isArray(ptr[prop])) {
+                ptr[prop] = {}
+            }
             ptr = ptr[prop]
             prop = token
         }
@@ -58,6 +66,12 @@ export class HotkeySettingsTabComponent {
         } catch (error) {
             console.error('Could not save hotkeys:', error)
         }
+    }
+
+    copyId (id: string) {
+        this.platform.setClipboard({
+            text: id,
+        })
     }
 
     hotkeyFilterFn (hotkey: HotkeyDescription, query: string): boolean {
