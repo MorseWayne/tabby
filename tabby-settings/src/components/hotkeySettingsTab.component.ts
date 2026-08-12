@@ -45,7 +45,7 @@ export class HotkeySettingsTabComponent {
         return Array.isArray(ptr) ? ptr.map(hotkey => this.detectDuplicates(hotkey)) : []
     }
 
-    setHotkeys (id: string, hotkeys: Hotkey[]) {
+    async setHotkeys (id: string, hotkeys: Hotkey[]) {
         let ptr: any = this.config.store
         let prop = 'hotkeys'
         for (const token of id.split(/\./g)) {
